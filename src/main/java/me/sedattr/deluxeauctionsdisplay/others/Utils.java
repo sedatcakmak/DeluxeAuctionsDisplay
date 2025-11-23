@@ -2,7 +2,9 @@ package me.sedattr.deluxeauctionsdisplay.others;
 
 import de.tr7zw.changeme.nbtapi.NBT;
 import me.sedattr.deluxeauctions.DeluxeAuctions;
+import me.sedattr.deluxeauctionsdisplay.others.TaskUtils;
 import me.sedattr.deluxeauctionsdisplay.DeluxeAuctionsDisplay;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -60,24 +62,46 @@ public class Utils {
         if (location == null || location.getWorld() == null)
             return;
 
-        Chunk chunk = location.getChunk();
-        World world = location.getWorld();
-        if (!world.isChunkLoaded(chunk))
-            world.loadChunk(chunk);
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), location, task -> {
+                World world = location.getWorld();
+                Chunk chunk = location.getChunk();
 
-        if (!chunk.isLoaded())
-            chunk.load(true);
+                if (!world.isChunkLoaded(chunk))
+                    world.loadChunk(chunk);
+                if (!chunk.isLoaded())
+                    chunk.load(true);
+            });
+        } else {
+            World world = location.getWorld();
+            Chunk chunk = location.getChunk();
+
+            if (!world.isChunkLoaded(chunk))
+                world.loadChunk(chunk);
+            if (!chunk.isLoaded())
+                chunk.load(true);
+        }
     }
 
     public static void clearSign(Sign sign) {
         if (sign == null)
             return;
 
-        for (int i = 0; i <= 3; i++) {
-            sign.setLine(i, " ");
-        }
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), sign.getLocation(), task -> {
+                for (int i = 0; i <= 3; i++) {
+                    sign.setLine(i, " ");
+                }
 
-        sign.update();
+                sign.update();
+            });
+        } else {
+            for (int i = 0; i <= 3; i++) {
+                sign.setLine(i, " ");
+            }
+
+            sign.update();
+        }
     }
 
     public static Sign findSign(Location location) {
@@ -97,11 +121,11 @@ public class Utils {
     public static void setDisplayTag(Entity entity) {
         if (DeluxeAuctions.getInstance().version >= 14) {
             NBT.modifyPersistentData(entity, nbt -> {
-                nbt.setBoolean("deluxeauctions_display", true);
+                nbt.setBoolean("deluxeauctions_display", Boolean.TRUE);
             });
         } else {
             NBT.modify(entity, nbt -> {
-                nbt.setBoolean("deluxeauctions_display", true);
+                nbt.setBoolean("deluxeauctions_display", Boolean.TRUE);
             });
         }
     }
@@ -121,24 +145,41 @@ public class Utils {
             return;
         loadChunk(location);
 
-        for (Entity entity : location.getWorld().getNearbyEntities(location, 2, 2, 2)) {
-            boolean isDisplay = Utils.isDisplay(entity);
-            if (!isDisplay)
-                continue;
-
-            entity.remove();
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), location, task -> {
+                for (Entity entity : location.getWorld().getNearbyEntities(location, 2, 2, 2)) {
+                    if (!Utils.isDisplay(entity)) continue;
+                    entity.remove();
+                }
+            });
+        } else {
+            for (Entity entity : location.getWorld().getNearbyEntities(location, 2, 2, 2)) {
+                if (!Utils.isDisplay(entity)) continue;
+                entity.remove();
+            }
         }
     }
 
     public static void updateArmorStand(ArmorStand armorStand) {
         loadChunk(armorStand.getLocation());
 
-        armorStand.setVisible(false);
-        armorStand.setRemoveWhenFarAway(false);
-        armorStand.setGravity(false);
-        armorStand.setBasePlate(false);
-        armorStand.setCustomNameVisible(false);
-        armorStand.setCanPickupItems(false);
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), armorStand.getLocation(), task -> {
+                armorStand.setVisible(false);
+                armorStand.setRemoveWhenFarAway(false);
+                armorStand.setGravity(false);
+                armorStand.setBasePlate(false);
+                armorStand.setCustomNameVisible(false);
+                armorStand.setCanPickupItems(false);
+            });
+        } else {
+            armorStand.setVisible(false);
+            armorStand.setRemoveWhenFarAway(false);
+            armorStand.setGravity(false);
+            armorStand.setBasePlate(false);
+            armorStand.setCustomNameVisible(false);
+            armorStand.setCanPickupItems(false);
+        }
     }
 
     public static float getYaw(Player player) {

@@ -6,6 +6,7 @@ import me.sedattr.deluxeauctions.menus.BinViewMenu;
 import me.sedattr.deluxeauctions.menus.NormalViewMenu;
 import me.sedattr.deluxeauctionsdisplay.others.TaskUtils;
 import me.sedattr.deluxeauctionsdisplay.others.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.Sign;
@@ -20,7 +21,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class DisplayListeners implements Listener {
     @EventHandler
@@ -103,12 +103,25 @@ public class DisplayListeners implements Listener {
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
-        for (Entity entity : event.getChunk().getEntities()) {
-            boolean isDisplay = Utils.isDisplay(entity);
-            if (!isDisplay)
-                continue;
+        Chunk chunk = event.getChunk();
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), chunk.getBlock(0,0,0).getLocation(), task -> {
+                for (Entity entity : chunk.getEntities()) {
+                boolean isDisplay = Utils.isDisplay(entity);
+                if (!isDisplay)
+                    continue;
 
-            entity.remove();
+                entity.remove();
+            }
+        });
+        } else {
+            for (Entity entity : chunk.getEntities()) {
+                boolean isDisplay = Utils.isDisplay(entity);
+                if (!isDisplay)
+                    continue;
+
+                entity.remove();
+            }
         }
     }
 

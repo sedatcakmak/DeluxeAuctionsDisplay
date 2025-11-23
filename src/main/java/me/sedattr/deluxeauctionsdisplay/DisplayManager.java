@@ -105,21 +105,41 @@ public class DisplayManager {
                 .addPlaceholder("%seller_displayname%", this.auction.getAuctionOwnerDisplayName())
                 .addPlaceholder("%bid_amount%", String.valueOf(this.auction.getAuctionBids().getPlayerBids().size()));
 
-        List<String> lines = section.getStringList("lines");
-        for (int i = 0; i <= 3; i++) {
-            String text = me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(lines.get(i), placeholderUtil));
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), sign.getLocation(), task -> {
+                List<String> lines = section.getStringList("lines");
+                for (int i = 0; i <= 3; i++) {
+                    String text = me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(lines.get(i), placeholderUtil));
 
-            if (this.sign.getType().name().endsWith("HANGING_SIGN")) {
-                if (text.length() > 12)
-                    this.sign.setLine(i, text.substring(0, 12) + "...");
+                    if (this.sign.getType().name().endsWith("HANGING_SIGN")) {
+                        if (text.length() > 12)
+                            this.sign.setLine(i, text.substring(0, 12) + "...");
+                        else
+                            this.sign.setLine(i, text);
+                    }
+                    else
+                        this.sign.setLine(i, text);
+                }
+
+                this.sign.update();
+            });
+        } else {
+            List<String> lines = section.getStringList("lines");
+            for (int i = 0; i <= 3; i++) {
+                String text = me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(lines.get(i), placeholderUtil));
+
+                if (this.sign.getType().name().endsWith("HANGING_SIGN")) {
+                    if (text.length() > 12)
+                        this.sign.setLine(i, text.substring(0, 12) + "...");
+                    else
+                        this.sign.setLine(i, text);
+                }
                 else
                     this.sign.setLine(i, text);
             }
-            else
-                this.sign.setLine(i, text);
-        }
 
-        this.sign.update();
+            this.sign.update();
+        }
     }
 
     public void changeAuction(Auction auction) {
@@ -150,27 +170,55 @@ public class DisplayManager {
         if (!DisplayManager.this.spawnItem)
             return;
 
-        if (DisplayManager.this.item != null) {
-            if (DisplayManager.this.item.isValid()) {
-                Utils.loadChunk(DisplayManager.this.item.getLocation());
-                DisplayManager.this.item.remove();
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), this.location, task -> {
+
+
+                if (DisplayManager.this.item != null) {
+                    if (DisplayManager.this.item.isValid()) {
+                        Utils.loadChunk(DisplayManager.this.item.getLocation());
+                        DisplayManager.this.item.remove();
+                    }
+                    DisplayManager.this.item = null;
+                }
+
+                if (this.auction == null)
+                    return;
+                if (DisplayManager.this.location == null)
+                    return;
+                if (DisplayManager.this.location.getWorld() == null)
+                    return;
+
+                ItemStack itemStack = this.auction.getAuctionItem().clone();
+                DisplayManager.this.item = DisplayManager.this.location.getWorld().dropItem(DisplayManager.this.location.clone().add(0, 1.5, 0), itemStack);
+                DisplayManager.this.item.setVelocity(new Vector(0, 0, 0));
+                DisplayManager.this.item.setPickupDelay(Integer.MAX_VALUE);
+                DisplayManager.this.item.setCustomNameVisible(false);
+                Utils.setDisplayTag(DisplayManager.this.item);
+            });
+        } else {
+            if (DisplayManager.this.item != null) {
+                if (DisplayManager.this.item.isValid()) {
+                    Utils.loadChunk(DisplayManager.this.item.getLocation());
+                    DisplayManager.this.item.remove();
+                }
+                DisplayManager.this.item = null;
             }
-            DisplayManager.this.item = null;
+
+            if (this.auction == null)
+                return;
+            if (DisplayManager.this.location == null)
+                return;
+            if (DisplayManager.this.location.getWorld() == null)
+                return;
+
+            ItemStack itemStack = this.auction.getAuctionItem().clone();
+            DisplayManager.this.item = DisplayManager.this.location.getWorld().dropItem(DisplayManager.this.location.clone().add(0, 1.5, 0), itemStack);
+            DisplayManager.this.item.setVelocity(new Vector(0, 0, 0));
+            DisplayManager.this.item.setPickupDelay(Integer.MAX_VALUE);
+            DisplayManager.this.item.setCustomNameVisible(false);
+            Utils.setDisplayTag(DisplayManager.this.item);
         }
-
-        if (this.auction == null)
-            return;
-        if (DisplayManager.this.location == null)
-            return;
-        if (DisplayManager.this.location.getWorld() == null)
-            return;
-
-        ItemStack itemStack = this.auction.getAuctionItem().clone();
-        DisplayManager.this.item = DisplayManager.this.location.getWorld().dropItem(DisplayManager.this.location.clone().add(0, 1.5, 0), itemStack);
-        DisplayManager.this.item.setVelocity(new Vector(0, 0, 0));
-        DisplayManager.this.item.setPickupDelay(Integer.MAX_VALUE);
-        DisplayManager.this.item.setCustomNameVisible(false);
-        Utils.setDisplayTag(DisplayManager.this.item);
     }
 
     private void updateTitles() {
@@ -199,49 +247,100 @@ public class DisplayManager {
     }
 
     private void updateTitle(String type, PlaceholderUtil placeholderUtil) {
-        ConfigurationSection section = DeluxeAuctionsDisplay.getInstance().config.getConfigurationSection("titles." + type);
-        if (section == null || !section.getBoolean("enabled")) {
-            this.headStand.setCustomNameVisible(false);
-            this.titleStand.setCustomNameVisible(false);
-            return;
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), headStand.getLocation(), task -> {
+                ConfigurationSection section = DeluxeAuctionsDisplay.getInstance().config.getConfigurationSection("titles." + type);
+                if (section == null || !section.getBoolean("enabled")) {
+                    this.headStand.setCustomNameVisible(false);
+                    this.titleStand.setCustomNameVisible(false);
+                    return;
+                }
+
+                String line1 = section.getString("line_1");
+                if (line1 != null && !line1.isEmpty()) {
+                    this.titleStand.setCustomName(me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(line1, placeholderUtil)));
+                    this.titleStand.setCustomNameVisible(true);
+                } else
+                    this.titleStand.setCustomNameVisible(false);
+
+                String line2 = section.getString("line_2");
+                if (line2 != null && !line2.isEmpty()) {
+                    this.headStand.setCustomName(me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(line2, placeholderUtil)));
+                    this.headStand.setCustomNameVisible(true);
+                } else
+                    this.headStand.setCustomNameVisible(false);
+            });
+        } else {
+            ConfigurationSection section = DeluxeAuctionsDisplay.getInstance().config.getConfigurationSection("titles." + type);
+            if (section == null || !section.getBoolean("enabled")) {
+                this.headStand.setCustomNameVisible(false);
+                this.titleStand.setCustomNameVisible(false);
+                return;
+            }
+
+            String line1 = section.getString("line_1");
+            if (line1 != null && !line1.isEmpty()) {
+                this.titleStand.setCustomName(me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(line1, placeholderUtil)));
+                this.titleStand.setCustomNameVisible(true);
+            } else
+                this.titleStand.setCustomNameVisible(false);
+
+            String line2 = section.getString("line_2");
+            if (line2 != null && !line2.isEmpty()) {
+                this.headStand.setCustomName(me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(line2, placeholderUtil)));
+                this.headStand.setCustomNameVisible(true);
+            } else
+                this.headStand.setCustomNameVisible(false);
         }
-
-        String line1 = section.getString("line_1");
-        if (line1 != null && !line1.isEmpty()) {
-            this.titleStand.setCustomName(me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(line1, placeholderUtil)));
-            this.titleStand.setCustomNameVisible(true);
-        } else
-            this.titleStand.setCustomNameVisible(false);
-
-        String line2 = section.getString("line_2");
-        if (line2 != null && !line2.isEmpty()) {
-            this.headStand.setCustomName(me.sedattr.deluxeauctions.others.Utils.colorize(me.sedattr.deluxeauctions.others.Utils.replacePlaceholders(line2, placeholderUtil)));
-            this.headStand.setCustomNameVisible(true);
-        } else
-            this.headStand.setCustomNameVisible(false);
     }
 
     public void respawnEntities() {
-        Utils.loadChunk(this.location);
-        Utils.removeOldEntities(this.location);
+        if (TaskUtils.isFolia) {
+            Bukkit.getRegionScheduler().run(DeluxeAuctionsDisplay.getInstance(), this.location, task -> {
+                Utils.loadChunk(this.location);
+                Utils.removeOldEntities(this.location);
 
-        this.headStand = this.location.getWorld().spawn(this.location, ArmorStand.class);
-        Utils.setDisplayTag(this.headStand);
-        Utils.updateArmorStand(this.headStand);
+                this.headStand = this.location.getWorld().spawn(this.location, ArmorStand.class);
+                Utils.setDisplayTag(this.headStand);
+                Utils.updateArmorStand(this.headStand);
 
-        this.titleStand = this.location.getWorld().spawn(this.location.clone().add(0, 0.25, 0), ArmorStand.class);
-        Utils.setDisplayTag(this.titleStand);
-        Utils.updateArmorStand(this.titleStand);
+                this.titleStand = this.location.getWorld().spawn(this.location.clone().add(0, 0.25, 0), ArmorStand.class);
+                Utils.setDisplayTag(this.titleStand);
+                Utils.updateArmorStand(this.titleStand);
 
-        ItemStack itemStack = getItemStack();
-        if (itemStack != null)
-            this.headStand.setHelmet(itemStack);
+                ItemStack itemStack = getItemStack();
+                if (itemStack != null)
+                    this.headStand.setHelmet(itemStack);
 
-        this.sign = Utils.findSign(this.location);
+                this.sign = Utils.findSign(this.location);
 
-        updateTitles();
-        updateSign();
+                updateTitles();
+                updateSign();
 
-        spawnItem();
+                spawnItem();
+            });
+        } else {
+            Utils.loadChunk(this.location);
+            Utils.removeOldEntities(this.location);
+
+            this.headStand = this.location.getWorld().spawn(this.location, ArmorStand.class);
+            Utils.setDisplayTag(this.headStand);
+            Utils.updateArmorStand(this.headStand);
+
+            this.titleStand = this.location.getWorld().spawn(this.location.clone().add(0, 0.25, 0), ArmorStand.class);
+            Utils.setDisplayTag(this.titleStand);
+            Utils.updateArmorStand(this.titleStand);
+
+            ItemStack itemStack = getItemStack();
+            if (itemStack != null)
+                this.headStand.setHelmet(itemStack);
+
+            this.sign = Utils.findSign(this.location);
+
+            updateTitles();
+            updateSign();
+
+            spawnItem();
+        }
     }
 }
