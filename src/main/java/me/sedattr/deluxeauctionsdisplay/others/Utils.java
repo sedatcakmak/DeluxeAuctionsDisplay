@@ -2,7 +2,6 @@ package me.sedattr.deluxeauctionsdisplay.others;
 
 import de.tr7zw.changeme.nbtapi.NBT;
 import me.sedattr.deluxeauctions.DeluxeAuctions;
-import me.sedattr.deluxeauctionsdisplay.others.TaskUtils;
 import me.sedattr.deluxeauctionsdisplay.DeluxeAuctionsDisplay;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
